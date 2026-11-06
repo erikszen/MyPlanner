@@ -25,6 +25,15 @@ export default function App() {
   const [tasks, setTasks] = useSaved('mp-tasks', [])
   const [notes, setNotes] = useSaved('mp-notes', [])
   const [events, setEvents] = useSaved('mp-events', [])
+  const [labels, setLabels] = useSaved('mp-labels', [
+  {
+    id: 'work',
+    name: 'Работа',
+    color: '#CFE1FF'
+  }
+])
+const [labelName, setLabelName] = useState('')
+const [labelColor, setLabelColor] = useState('#CFE1FF')
   const [taskText, setTaskText] = useState('')
   
 const [taskDate, setTaskDate] = useState('')
@@ -64,7 +73,8 @@ const [eventEndTime, setEventEndTime] = useState('10:00')
     if (!noteText.trim()) return
     setNotes([{
       id: crypto.randomUUID(),
-      text: noteText.trim()
+      text: noteText.trim(),
+      date: selectedDate
     }, ...notes])
     setNoteText('')
   }
@@ -82,6 +92,32 @@ endTime: eventAllDay ? null : eventEndTime
     }])
     setEventText('')
   }
+function addLabel(e) {
+  e.preventDefault()
+  if (!labelName.trim()) return
+
+  setLabels([...labels, {
+    id: crypto.randomUUID(),
+    name: labelName.trim(),
+    color: labelColor
+  }])
+
+  setLabelName('')
+}
+
+function assignLabel(labelId, date) {
+  if (!date) return
+
+  setEvents(prev => [
+    ...prev,
+    {
+      id: crypto.randomUUID(),
+      date,
+      labelId,
+      type: 'label'
+    }
+  ])
+}
 
   const completed = tasks.filter(t => t.done).length
 
@@ -183,6 +219,13 @@ endTime: eventAllDay ? null : eventEndTime
                   value={noteText}
                   onChange={e => setNoteText(e.target.value)}
                 />
+                
+<input
+  type="date"
+  value={selectedDate}
+  onChange={(e) => setSelectedDate(e.target.value)}
+/>
+
                 <button>Сохранить заметку</button>
               </form>
               {notes.map(note => (
@@ -233,15 +276,83 @@ onClick={() => {
 }}
 >
       {i + 1}
-      {tasks.some(task =>
-  task.date ===
-  `${calendarDate.getFullYear()}-${String(calendarDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
-) && <span>🔵</span>}
 
-{events.some(event =>
-  event.date ===
-  `${calendarDate.getFullYear()}-${String(calendarDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
-) && <span>🟣</span>}
+{tasks
+  .filter(task =>
+    task.date === `${calendarDate.getFullYear()}-${String(calendarDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
+  )
+  .map(task => (
+    <span
+      key={task.id}
+      style={{
+        display: 'block',
+        backgroundColor: '#CFE1FF',
+        color: '#111827',
+        borderRadius: '4px',
+        padding: '2px 4px',
+        marginTop: '3px',
+        fontSize: '10px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      }}
+    >
+      {task.text}
+    </span>
+  ))}
+
+
+{notes
+  .filter(note =>
+    note.date === `${calendarDate.getFullYear()}-${String(calendarDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
+  )
+  .map(note => (
+    <span
+      key={note.id}
+      style={{
+        display: 'block',
+        backgroundColor: '#FDE68A',
+        color: '#111827',
+        borderRadius: '4px',
+        padding: '2px 4px',
+        marginTop: '3px',
+        fontSize: '10px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      }}
+    >
+      📝 {note.text}
+    </span>
+  ))}
+
+{events
+  .filter(event =>
+    event.type === 'label' &&
+    event.date === `${calendarDate.getFullYear()}-${String(calendarDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
+  )
+  .map(event => {
+    const label = labels.find(l => l.id === event.labelId)
+    if (!label) return null
+
+    return (
+      <span
+        key={event.id}
+        style={{
+          display: 'block',
+          backgroundColor: label.color,
+          color: '#111827',
+          borderRadius: '6px',
+          padding: '2px 4px',
+          marginTop: '3px',
+          fontSize: '10px',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}
+      >
+        {label.name}
+      </span>
+    )
+  })}
+
     </button>
   ))}
 </div>
@@ -284,6 +395,27 @@ onClick={() => {
                 />
                 <button>Добавить событие</button>
               </form>
+              
+<h3>Добавить ярлык на дату</h3>
+
+<div className="form vertical">
+  <select
+    defaultValue=""
+    onChange={(e) => {
+      if (!e.target.value) return
+      assignLabel(e.target.value, eventDate)
+      e.target.value = ""
+    }}
+  >
+    <option value="">Выбери ярлык</option>
+    {labels.map((label) => (
+      <option key={label.id} value={label.id}>
+        {label.name}
+      </option>
+    ))}
+  </select>
+</div>
+
               <h3>Задачи на выбранный день</h3>
 
               {tasks
@@ -328,6 +460,16 @@ onClick={() => {
                   }>×</button>
                 </div>
               ))}
+              
+<h3>Заметки на выбранный день</h3>
+{notes
+  .filter(note => note.date === selectedDate)
+  .map(note => (
+    <div className="item" key={note.id}>
+      <span>{note.text}</span>
+    </div>
+  ))}
+
             </section>
           )}
 
@@ -350,6 +492,43 @@ onClick={() => {
                   </button>
                 ))}
               </div>
+              
+<h2>Мои ярлыки</h2>
+
+<form onSubmit={addLabel} className="form vertical">
+  <input
+    placeholder="Название ярлыка"
+    value={labelName}
+    onChange={(e) => setLabelName(e.target.value)}
+  />
+
+  <label>
+    Цвет ярлыка
+    <input
+      type="color"
+      value={labelColor}
+      onChange={(e) => setLabelColor(e.target.value)}
+    />
+  </label>
+
+  <button type="submit">Создать ярлык</button>
+</form>
+
+{labels.map((label) => (
+  <div className="item" key={label.id}>
+    <span
+      style={{
+        backgroundColor: label.color,
+        color: "#111827",
+        padding: "6px 12px",
+        borderRadius: "8px"
+      }}
+    >
+      {label.name}
+    </span>
+  </div>
+))}
+
               <p>Основной цвет: графитовый 🖤</p>
             </section>
           )}
