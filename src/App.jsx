@@ -326,6 +326,30 @@ onClick={() => {
 
 {events
   .filter(event =>
+    event.type !== 'label' &&
+    event.date === `${calendarDate.getFullYear()}-${String(calendarDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
+  )
+  .map(event => (
+    <span
+      key={event.id}
+      style={{
+        display: 'block',
+        backgroundColor: '#DBEAFE',
+        color: '#111827',
+        borderRadius: '4px',
+        padding: '2px 4px',
+        marginTop: '3px',
+        fontSize: '10px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      }}
+    >
+      📅 {event.text}
+    </span>
+  ))}
+
+{events
+  .filter(event =>
     event.type === 'label' &&
     event.date === `${calendarDate.getFullYear()}-${String(calendarDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
   )
