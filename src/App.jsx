@@ -32,6 +32,9 @@ const [calendarDate, setCalendarDate] = useState(new Date())
 const [selectedDate, setSelectedDate] = useState('')
   const [noteText, setNoteText] = useState('')
   const [eventText, setEventText] = useState('')
+  const [eventAllDay, setEventAllDay] = useState(true)
+const [eventStartTime, setEventStartTime] = useState('09:00')
+const [eventEndTime, setEventEndTime] = useState('10:00')
   const [eventDate, setEventDate] = useState(
     new Date().toLocaleDateString('en-CA')
   )
@@ -72,7 +75,10 @@ const [selectedDate, setSelectedDate] = useState('')
     setEvents([...events, {
       id: crypto.randomUUID(),
       text: eventText.trim(),
-      date: eventDate
+      date: eventDate,
+allDay: eventAllDay,
+startTime: eventAllDay ? null : eventStartTime,
+endTime: eventAllDay ? null : eventEndTime
     }])
     setEventText('')
   }
@@ -245,6 +251,32 @@ onClick={() => {
                   value={eventDate}
                   onChange={e => setEventDate(e.target.value)}
                 />
+                <label>
+  <input
+    type="checkbox"
+    checked={eventAllDay}
+    onChange={e => setEventAllDay(e.target.checked)}
+  />
+  Весь день
+</label>
+
+{!eventAllDay && (
+  <>
+    <label>Начало</label>
+    <input
+      type="time"
+      value={eventStartTime}
+      onChange={e => setEventStartTime(e.target.value)}
+    />
+
+    <label>Конец</label>
+    <input
+      type="time"
+      value={eventEndTime}
+      onChange={e => setEventEndTime(e.target.value)}
+    />
+  </>
+)}
                 <input
                   placeholder="Название события"
                   value={eventText}
@@ -284,7 +316,13 @@ onClick={() => {
                 a.date.localeCompare(b.date)
               ).map(event => (
                 <div className="item" key={event.id}>
-                  <span>{event.date} — {event.text}</span>
+                  <span>
+  {event.date} — {event.text}
+  {' — '}
+  {event.allDay === false
+    ? `${event.startTime}–${event.endTime}`
+    : 'Весь день'}
+</span>
                   <button className="delete" onClick={() =>
                     setEvents(events.filter(e => e.id !== event.id))
                   }>×</button>
